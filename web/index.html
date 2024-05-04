@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+        integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="libfec.js"></script>
+    <script src="quiet.js"></script>
+    <script src="script.js" type="module"></script>
+    <script async type="text/javascript" src="quiet-emscripten.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="centercontainer" id="home">
+        <h1>qsh</h1>
+        <label class="sharebutton">
+            <input type="file" id="share" />
+            <p id="sharetext" class="button"><i data-lucide="file-up" style="margin-right: 5px;"></i>share</p>
+        </label>
+        <p style="color: #272727;">or</p>
+        <p style="color: #808080;">receive</p>
+        <div class="buttongrid">
+            <button class="button square" id="activateqr"><i data-lucide="qr-code"></i></button>
+            <button class="button square middle" id="inputPass"><i data-lucide="text-cursor-input"></i></button>
+            <button class="button square" id="receiveQuiet"><i data-lucide="smartphone-nfc"></i></button>
+        </div>
+    </div>
+    <div class="centercontainer" id="scannercontainer">
+        <video id="camera" width="10" height="10" autoplay></video>
+    </div>
+    <div class="centercontainer sharegrid" style="display: none;" id="sharegrid">
+        <div>
+            scan QR
+            <div id="qrcontainer">
+                <div id="shareQrcode"></div>
+            </div>
+        </div>
+        <div>
+            share password
+            <p id="sharePass"></p>
+        </div>
+        <div>
+            play sound
+            <button class="button square squarebig" id="sendquiet"><i data-lucide="smartphone-nfc"></i></button>
+        </div>
+    </div>
+
+</body>
+
+</html>

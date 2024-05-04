@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+
+input[type="file"] {
+    display: none;
+}
+
+html,
+body {
+    background-color: #0C0C0C;
+    color: #FFFFFF;
+    font-family: 'IBM Plex Mono';
+    text-align: center;
+}
+
+.button {
+    background-color: #1A1A1A;
+    color: #808080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #303030;
+}
+
+.square {
+    width: 2vw;
+    height: 2vw;
+    border: none;
+    border-radius: 15px;
+    min-width: 38px;
+    min-height: 38px;
+}
+.squarebig {
+    width: 4vw;
+    height: 4vw;
+    border: none;
+    border-radius: 15px;
+    min-width: 76px;
+    min-height: 76px;
+    margin-top: 10px !important;
+    margin: auto;
+}
+.middle {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+#sharetext {
+    padding: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    border-radius: 20px;
+    width: max-content;
+    cursor: pointer;
+}
+
+
+.centercontainer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    text-align: center;
+    margin: auto;
+}
+
+.sharegrid {
+    display: grid;
+    grid-template-columns: repeat(3, 33.3%);
+    grid-template-rows: 50%;
+    column-gap: 0px;
+    row-gap: 0px;
+    width: 35vw;
+    text-align: center;
+}
+.buttongrid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#qrcontainer {
+    margin-top: 10px;
+}
+
+#sharePass {
+    font-weight: 700;
+    font-size: x-large;
+    color: #808080;
+    margin-top: 10px;
+    padding: 0;
+}
+#scannercontainer {
+    width: 25vw;
+    height: 25vh;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}

@@ -1,7 +1,8 @@
 lucide.createIcons();
-import { parseFile } from "./parseFile.js";
+import { FileChunkReader } from "./parseFile.js";
 import { QRCode } from './qrim.module.js';
 import * as ZXing from 'https://esm.run/@zxing/library';
+import moment from 'https://cdn.jsdelivr.net/npm/moment@2.30.1/+esm'
 /*
 Quiet.init({
     profilesPrefix: "/web/",
@@ -14,12 +15,36 @@ Quiet.addReadyCallback(function(){
     transmit.transmit(Quiet.str2ab("hiii :3"));
 });
 */
+function setStatus(msg) {
+    document.getElementById("statustext").innerHTML = msg;
+    document.getElementById("statuswindow").style.display = "flex";
+}
+function setSubStatus(msg) {
+    document.getElementById("substatus").innerHTML = msg;
+    document.getElementById("statuswindow").style.display = "flex";
+}
+function hideStatus() {
+    document.getElementById("statuswindow").style.display = "none";
+}
 document.getElementById('share').addEventListener('change', function (ev) {
     let file = ev.target.files[0];
+    let chunkcount = file.size / 512000;
     const socket = io("https://qsh.ech0.dev");
+    socket.on("connect_error", (err) => {
+        // the reason of the error, for example "xhr poll error"
+        console.log(err.message);
+
+        // some additional description, for example the status code of the initial HTTP response
+        console.log(err.description);
+
+        // some additional context, for example the XMLHttpRequest object
+        console.log(err.context);
+    });
     socket.on("getConnectionType", () => {
+        setStatus("sending connection type")
         socket.emit("fufillConnectionType", "send")
         socket.on("setTransferPassword", (pass) => {
+            setStatus("password granted")
             document.getElementById("home").style.display = "none";
             document.getElementById("sharegrid").style.display = "grid";
             if (navigator.userAgent.match(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i)) {
@@ -37,6 +62,7 @@ document.getElementById('share').addEventListener('change', function (ev) {
                 style: QRCode.Styles.Blob,
             });
             document.getElementById("sharePass").innerHTML = pass;
+
             document.getElementById("sendquiet").addEventListener("click", function () {
                 Quiet.init({
                     profilesPrefix: "/",
@@ -45,16 +71,21 @@ document.getElementById('share').addEventListener('change', function (ev) {
                 });
                 Quiet.addReadyCallback(function () {
                     console.log("ready");
-                    var transmit = Quiet.transmitter({ profile: "audible-7k-channel-0" });
+                    var transmit = Quiet.transmitter({ profile: "audible" });
                     transmit.transmit(Quiet.str2ab(pass));
                 });
             })
+            hideStatus();
             socket.on("ok", () => {
+                setStatus("transferring...");
                 console.log("connected to reciever");
-                socket.emit("transfer", pass, "name", file.name);
+                socket.emit("transfer", pass, "metadata", { "name": file.name, "chunkcount": Math.ceil(chunkcount) });
+                let sent = 0;
+                var reader = new FileChunkReader(file, 512 * 1024, true, function (ch) { socket.emit("transfer", pass, "chunk", ch); sent++; console.log(`sent chunk ${sent} out of ${chunkcount}`) }, function () { }, function () { socket.emit("transfer", pass, "done"); });
                 socket.on("getNextChunk", () => {
-                    parseFile(file, { chunkSize: 1024 * 1024, binary: true, onChunkRead: function (ch) { socket.emit("transfer", pass, "chunk", ch); }, success: function () { socket.emit("transfer", pass, "done"); } })
-
+                    if (sent < chunkcount) {
+                        reader.nextChunk();
+                    }
                 })
                 socket.on("saved", () => {
                     socket.disconnect();
@@ -84,8 +115,10 @@ document.getElementById("activateqr").addEventListener("click", function () {
     document.getElementById("scannercontainer").style.display = "flex";
     const codeReader = new ZXing.BrowserQRCodeReader()
     console.log(codeReader.getVideoInputDevices())
+
     codeReader.getVideoInputDevices().then((devices) => {
-        decodeContinuously(codeReader, devices[0].deviceId)
+        decodeContinuously(codeReader, devices[devices.length - 1].deviceId)
+
     })
 
 })
@@ -105,7 +138,7 @@ document.getElementById("receiveQuiet").addEventListener("click", function () {
         });
         Quiet.addReadyCallback(function () {
             rec = Quiet.receiver({
-                profile: "audible-7k-channel-0", onReceive: function (recvPayload) {
+                profile: "audible", onReceive: function (recvPayload) {
                     console.log("yay")
                     let content = new ArrayBuffer(0);
                     content = Quiet.mergeab(content, recvPayload);
@@ -129,9 +162,21 @@ document.getElementById("receiveQuiet").addEventListener("click", function () {
 function receive(pass) {
     // CommonJS
     const socket = io("https://qsh.ech0.dev");
+    socket.on("connect_error", (err) => {
+        // the reason of the error, for example "xhr poll error"
+        console.log(err.message);
+
+        // some additional description, for example the status code of the initial HTTP response
+        console.log(err.description);
+
+        // some additional context, for example the XMLHttpRequest object
+        console.log(err.context);
+    });
     socket.on("getConnectionType", () => {
+        setStatus("sending connection type")
         socket.emit("fufillConnectionType", "receive")
         socket.on("getTransferPassword", () => {
+            setStatus("sending password")
             socket.emit("fufillTransferPassword", pass);
             socket.on("ok", () => {
                 if (rec) {
@@ -139,13 +184,26 @@ function receive(pass) {
                 }
                 document.getElementById("receiveQuiet").style.color = "#808080";
                 console.log("connected to sender");
-                socket.on("name", function (name) {
+                setStatus("connected; waiting for metadata")
+                socket.on("metadata", function (metadata) {
+                    setStatus("receiving")
                     socket.emit("transfer", pass, "getNextChunk");
-                    console.log(name);
+                    console.log(metadata.name);
                     let arrayBuffers = [];
+                    let times = [];
+                    let received = 0;
+                    let start, end;
+                    start = Date.now();
                     socket.on("chunk", (chunkdata) => {
                         console.log("got a chunk");
+                        end = Date.now();
                         arrayBuffers.push(chunkdata);
+                        received++;
+                        setStatus(`receiving`)
+                        times.push((end - start) / 1000)
+                        setSubStatus(`${received} out of ${metadata.chunkcount} chunks received, approx ${moment.duration((Math.ceil((eval(times.join('+')) / times.length) * (metadata.chunkcount - received))), 'seconds').humanize()}`)
+                        start = Date.now();
+                        socket.emit("transfer", pass, "getNextChunk");
                     })
                     socket.on("done", () => {
                         console.log("finished, making a blob")
@@ -155,13 +213,14 @@ function receive(pass) {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = name;
+                        a.download = metadata.name;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
                         socket.emit("transfer", pass, "saved");
-
+                        hideStatus();
+                        window.location.reload();
                     })
                 })
             })

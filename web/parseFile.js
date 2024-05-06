@@ -16,52 +16,61 @@
 // - onChunkError: an optional function that accepts an object of type FileReader.error
 // - success: an optional function invoked as soon as the whole file has been read successfully
 //     <!--https://gist.githubusercontent.com/pineapplethief/075cb0ce9e6d1a6e80571036929f399e/raw/918e02357ec0f886bb9c62446f96886e5885227f/parseFile.js-->
-export function parseFile(file, {
+/*export function parseFile(file, {
   chunkSize = 64 * 1024,
   binary = false,
   onChunkRead,
   onChunkError,
   success
 } = {}) {
-  let fileSize = file.size
-  let offset = 0
-  let readBlock = null
 
-  let onLoadHandler = function(event) {
+}*/
+
+export class FileChunkReader {
+  constructor(file, chunkSize, binary, onChunkRead, onChunkError, success){
+    this.chunkSize = chunkSize;
+    this.binary = binary;
+    this.onChunkRead = onChunkRead;
+    this.onChunkError = onChunkError;
+    this.success = success;
+    this.file = file;
+    this.fileSize = this.file.size;
+    this.offset = 0;
+  }
+  onLoadHandler = (event) => {
     let result = event.target.result
 
     if (event.target.error == null) {
-      offset += binary ? event.target.result.byteLength : event.target.result.length
-      if (onChunkRead) {
-        onChunkRead(result)
+      this.offset += this.binary ? event.target.result.byteLength : event.target.result.length
+      if (this.onChunkRead) {
+        this.onChunkRead(result)
       }
     } else {
-      if (onChunkError) {
-        onChunkError(event.target.error)
+      if (this.onChunkError) {
+        this.onChunkError(event.target.error)
       }
       return
     }
 
-    if (offset >= fileSize) {
-      if (success) {
-        success(file)
+    if (this.offset >= this.fileSize) {
+      if (this.success) {
+        this.success(this.file)
       }
       return
     }
-
-    readBlock(offset, chunkSize, file)
   }
-
-  readBlock = function(offset, length, file) {
+  readBlock = (offset, length, file) => {
     let fileReader = new FileReader()
     let blob = file.slice(offset, length + offset)
-    fileReader.onload = onLoadHandler
-    if (binary) {
+    fileReader.onload = this.onLoadHandler
+    if (this.binary) {
       fileReader.readAsArrayBuffer(blob)
     } else {
       fileReader.readAsText(blob)
     }
   }
+  nextChunk = () => {
+    this.readBlock(this.offset, this.chunkSize, this.file)
+  }
 
-  readBlock(offset, chunkSize, file)
 }

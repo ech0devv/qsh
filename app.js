@@ -4,7 +4,7 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
-    maxHttpBufferSize: 1e8
+    maxHttpBufferSize: 1e10
 });
 var generator = require('generate-password');
 
@@ -29,6 +29,7 @@ io.on('connection', (socket) => {
         }
     })
     socket.on("transfer", (pass, command, arg) => {
+        console.log(`handing over ${pass} ${command} ${arg}`)
         if (io.sockets.adapter.rooms.has(pass)) {
             io.to(pass).emit(command, arg)
         }

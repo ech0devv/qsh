@@ -6,7 +6,7 @@ var generator = require('generate-password');
 var privateKey = fs.readFileSync( 'key.pem' );
 var certificate = fs.readFileSync( 'key.key' );
 
-const server = https.createServer({key: privateKey, cert: certificate}, app);
+const server = https.createServer({key: certificate, cert: privateKey}, app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
     maxHttpBufferSize: 1e10

@@ -36,6 +36,6 @@ io.on('connection', (socket) => {
     })
 });
 
-server.listen(3192, () => {
-    console.log('listening on *:3192');
+server.listen(process.env.PORT || 3192, () => {
+    console.log('listening');
 });

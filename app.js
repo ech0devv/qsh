@@ -1,12 +1,15 @@
 const express = require('express');
 const app = express();
-const http = require('http');
-const server = http.createServer(app);
+const https = require('https');
+var generator = require('generate-password');
+var privateKey = fs.readFileSync( 'key.pem' );
+var certificate = fs.readFileSync( 'key.key' );
+
+const server = https.createServer({key: privateKey, cert: certificate}, app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
     maxHttpBufferSize: 1e10
 });
-var generator = require('generate-password');
 
 app.use(express.static('web'))
 
@@ -36,6 +39,6 @@ io.on('connection', (socket) => {
     })
 });
 
-server.listen(3000, () => {
+server.listen(443, () => {
     console.log('listening');
 });

@@ -1,16 +1,12 @@
 const express = require('express');
 const app = express();
-const https = require('https');
-const fs = require('fs')
-var generator = require('generate-password');
-var privateKey = fs.readFileSync( 'key.pem' );
-var certificate = fs.readFileSync( 'key.key' );
-
-const server = https.createServer({key: certificate, cert: privateKey}, app);
+const http = require('http');
+const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
     maxHttpBufferSize: 1e10
 });
+var generator = require('generate-password');
 
 app.use(express.static('web'))
 

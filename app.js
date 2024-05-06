@@ -40,6 +40,6 @@ io.on('connection', (socket) => {
     })
 });
 
-server.listen(443, () => {
+server.listen(3000, () => {
     console.log('listening');
 });

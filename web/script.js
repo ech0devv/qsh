@@ -3,18 +3,7 @@ import { FileChunkReader } from "./parseFile.js";
 import { QRCode } from './qrim.module.js';
 import * as ZXing from 'https://esm.run/@zxing/library';
 import moment from 'https://cdn.jsdelivr.net/npm/moment@2.30.1/+esm'
-/*
-Quiet.init({
-    profilesPrefix: "/web/",
-    memoryInitializerPrefix: "/web/",
-    libfecPrefix: "/web/"
-});
-Quiet.addReadyCallback(function(){
-    console.log("ready");
-    var transmit = Quiet.transmitter({profile: "audible"});
-    transmit.transmit(Quiet.str2ab("hiii :3"));
-});
-*/
+
 function setStatus(msg) {
     document.getElementById("statustext").innerHTML = msg;
     document.getElementById("statuswindow").style.display = "flex";
@@ -54,7 +43,7 @@ document.getElementById('share').addEventListener('change', function (ev) {
 
             }
             new QRCode(document.getElementById("shareQrcode"), {
-                text: pass,
+                text: "https://qsh.ech0.dev/" + pass,
                 size: 128,
                 colorLight: "#1A1A1A",
                 colorDark
@@ -62,29 +51,23 @@ document.getElementById('share').addEventListener('change', function (ev) {
                 style: QRCode.Styles.Blob,
             });
             document.getElementById("sharePass").innerHTML = pass;
-
-            document.getElementById("sendquiet").addEventListener("click", function () {
-                Quiet.init({
-                    profilesPrefix: "/",
-                    memoryInitializerPrefix: "/",
-                    libfecPrefix: "/"
-                });
-                Quiet.addReadyCallback(function () {
-                    console.log("ready");
-                    var transmit = Quiet.transmitter({ profile: "audible" });
-                    transmit.transmit(Quiet.str2ab(pass));
-                });
-            })
             hideStatus();
             socket.on("ok", () => {
                 setStatus("transferring...");
                 console.log("connected to reciever");
                 socket.emit("transfer", pass, "metadata", { "name": file.name, "chunkcount": Math.ceil(chunkcount) });
                 let sent = 0;
+                let start, end;
                 var reader = new FileChunkReader(file, 512 * 1024, true, function (ch) { socket.emit("transfer", pass, "chunk", ch); sent++; console.log(`sent chunk ${sent} out of ${chunkcount}`) }, function () { }, function () { socket.emit("transfer", pass, "done"); });
+                var times = []
+                start = Date.now();
                 socket.on("getNextChunk", () => {
                     if (sent < chunkcount) {
+                        end = Date.now();
+                        times.push((end - start) / 1000)
+                        setSubStatus(`${sent} out of ${chunkcount} chunks sent, approx ${moment.duration((Math.ceil((eval(times.join('+')) / times.length) * (chunkcount - sent))), 'seconds').humanize()}`)
                         reader.nextChunk();
+                        start = Date.now()
                     }
                 })
                 socket.on("saved", () => {
@@ -95,69 +78,11 @@ document.getElementById('share').addEventListener('change', function (ev) {
         })
     })
 })
-function decodeContinuously(codeReader, selectedDeviceId) {
-    codeReader.decodeFromInputVideoDeviceContinuously(selectedDeviceId, 'camera', (result, err) => {
-        if (result) {
-            try {
-                receive(result.text);
-                document.getElementById("scannercontainer").style.display = "none";
-                codeReader.reset();
-            } catch (err2) {
-                console.log(err2);
-            }
-        }
-    })
-}
-document.getElementById("activateqr").addEventListener("click", function () {
-    let camera = document.getElementById("camera");
-    camera.height = document.documentElement.clientHeight * 0.5;
-    camera.width = document.documentElement.clientWidth * 0.5;
-    document.getElementById("scannercontainer").style.display = "flex";
-    const codeReader = new ZXing.BrowserQRCodeReader()
-    console.log(codeReader.getVideoInputDevices())
 
-    codeReader.getVideoInputDevices().then((devices) => {
-        decodeContinuously(codeReader, devices[devices.length - 1].deviceId)
-
-    })
-
-})
 document.getElementById("inputPass").addEventListener("click", function () {
     receive(prompt('enter password'))
 })
-var quietexists = false;
-var rec;
-document.getElementById("receiveQuiet").addEventListener("click", function () {
-    if (!quietexists) {
-        quietexists = true;
-        document.getElementById("receiveQuiet").style.color = "#cc1111";
-        Quiet.init({
-            profilesPrefix: "/",
-            memoryInitializerPrefix: "/",
-            libfecPrefix: "/"
-        });
-        Quiet.addReadyCallback(function () {
-            rec = Quiet.receiver({
-                profile: "audible", onReceive: function (recvPayload) {
-                    console.log("yay")
-                    let content = new ArrayBuffer(0);
-                    content = Quiet.mergeab(content, recvPayload);
-                    receive(Quiet.ab2str(content));
 
-                }
-            })
-
-
-        })
-    } else {
-        if (rec) {
-            rec.destroy();
-        }
-        document.getElementById("receiveQuiet").style.color = "#808080";
-
-        quietexists = false;
-    }
-})
 
 function receive(pass) {
     // CommonJS
@@ -179,10 +104,6 @@ function receive(pass) {
             setStatus("sending password")
             socket.emit("fufillTransferPassword", pass);
             socket.on("ok", () => {
-                if (rec) {
-                    rec.destroy();
-                }
-                document.getElementById("receiveQuiet").style.color = "#808080";
                 console.log("connected to sender");
                 setStatus("connected; waiting for metadata")
                 socket.on("metadata", function (metadata) {
@@ -220,10 +141,15 @@ function receive(pass) {
                         URL.revokeObjectURL(url);
                         socket.emit("transfer", pass, "saved");
                         hideStatus();
-                        window.location.reload();
+                        window.location.href = window.location.origin;
                     })
                 })
             })
         })
     })
+}
+const lastchars = window.location.toString().split("/");
+if (lastchars[lastchars.length - 1].length == 8) {
+    console.log("qr scanned, " + lastchars[lastchars.length - 1])
+    receive(lastchars[lastchars.length - 1])
 }

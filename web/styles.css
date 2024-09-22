@@ -11,7 +11,9 @@ body {
     font-family: 'IBM Plex Mono';
     text-align: center;
 }
-
+#home {
+    text-align: center;
+}
 .button {
     background-color: #1A1A1A;
     color: #808080;
@@ -45,14 +47,22 @@ body {
     margin: auto;
 }
 .middle {
-    margin-left: 10px;
-    margin-right: 10px;
+    margin-left: 5px;
+    margin-right: 05px;
 }
 
 #sharetext {
     padding: 10px;
     padding-left: 50px;
     padding-right: 50px;
+    border-radius: 20px;
+    width: max-content;
+    cursor: pointer;
+}
+#rectext {
+    padding: 10px;
+    padding-left: 40.4px;
+    padding-right: 40.4px;
     border-radius: 20px;
     width: max-content;
     cursor: pointer;
@@ -70,7 +80,7 @@ body {
 
 .sharegrid {
     display: grid;
-    grid-template-columns: repeat(3, 33.3%);
+    grid-template-columns: repeat(2, 50%);
     grid-template-rows: 50%;
     column-gap: 0px;
     row-gap: 0px;

@@ -108,7 +108,7 @@ function receive(pass) {
                 setStatus("connected; waiting for metadata")
                 socket.on("metadata", function (metadata) {
                     let name = metadata.split("/")[0];
-                    let chunkcount = parseFloat(str);
+                    let chunkcount = parseFloat(metadata.split("/")[1]);
                     setStatus("receiving")
                     socket.emit("transfer", pass, "getNextChunk");
                     console.log(name);

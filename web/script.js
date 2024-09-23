@@ -83,7 +83,13 @@ document.getElementById("inputPass").addEventListener("click", function () {
     receive(prompt('enter password'))
 })
 
-
+function stringToByteArray(binaryString) {
+    let byteArray = [];
+    for (let i = 0; i < binaryString.length; i++) {
+        byteArray.push(binaryString.charCodeAt(i)); // Get the byte value
+    }
+    return byteArray;
+}
 function receive(pass) {
     // CommonJS
     const socket = io("https://qsh.ech0.dev");
@@ -120,7 +126,7 @@ function receive(pass) {
                     socket.on("chunk", (chunkdata) => {
                         console.log("got a chunk");
                         end = Date.now();
-                        arrayBuffers.push(atob(chunkdata));
+                        arrayBuffers.push(stringToByteArray(chunkdata));
                         received++;
                         setStatus(`receiving`)
                         times.push((end - start) / 1000)

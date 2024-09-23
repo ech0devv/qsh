@@ -107,9 +107,11 @@ function receive(pass) {
                 console.log("connected to sender");
                 setStatus("connected; waiting for metadata")
                 socket.on("metadata", function (metadata) {
+                    let name = metadata.split("/")[0];
+                    let chunkcount = parseFloat(str);
                     setStatus("receiving")
                     socket.emit("transfer", pass, "getNextChunk");
-                    console.log(metadata[3]);
+                    console.log(name);
                     let arrayBuffers = [];
                     let times = [];
                     let received = 0;
@@ -122,7 +124,7 @@ function receive(pass) {
                         received++;
                         setStatus(`receiving`)
                         times.push((end - start) / 1000)
-                        setSubStatus(`${received} out of ${metadata[4]} chunks received, approx ${moment.duration((Math.ceil((eval(times.join('+')) / times.length) * (metadata[4] - received))), 'seconds').humanize()}`)
+                        setSubStatus(`${received} out of ${chunkcount} chunks received, approx ${moment.duration((Math.ceil((eval(times.join('+')) / times.length) * (chunkcount - received))), 'seconds').humanize()}`)
                         start = Date.now();
                         socket.emit("transfer", pass, "getNextChunk");
                     })
@@ -134,7 +136,7 @@ function receive(pass) {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = metadata[3];
+                        a.download = name;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);

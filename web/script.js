@@ -120,7 +120,7 @@ function receive(pass) {
                     socket.on("chunk", (chunkdata) => {
                         console.log("got a chunk");
                         end = Date.now();
-                        arrayBuffers.push(chunkdata);
+                        arrayBuffers.push(atob(chunkdata));
                         received++;
                         setStatus(`receiving`)
                         times.push((end - start) / 1000)

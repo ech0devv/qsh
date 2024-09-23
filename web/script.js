@@ -55,7 +55,7 @@ document.getElementById('share').addEventListener('change', function (ev) {
             socket.on("ok", () => {
                 setStatus("transferring...");
                 console.log("connected to reciever");
-                socket.emit("transfer", pass, "metadata", { "name": file.name, "chunkcount": Math.ceil(chunkcount) });
+                socket.emit("transfer", pass, "metadata", file.name, chunkcount);
                 let sent = 0;
                 let start, end;
                 var reader = new FileChunkReader(file, 512 * 1024, true, function (ch) { socket.emit("transfer", pass, "chunk", ch); sent++; console.log(`sent chunk ${sent} out of ${chunkcount}`) }, function () { }, function () { socket.emit("transfer", pass, "done"); });
@@ -109,7 +109,7 @@ function receive(pass) {
                 socket.on("metadata", function (metadata) {
                     setStatus("receiving")
                     socket.emit("transfer", pass, "getNextChunk");
-                    console.log(metadata.name);
+                    console.log(metadata[3]);
                     let arrayBuffers = [];
                     let times = [];
                     let received = 0;
@@ -122,7 +122,7 @@ function receive(pass) {
                         received++;
                         setStatus(`receiving`)
                         times.push((end - start) / 1000)
-                        setSubStatus(`${received} out of ${metadata.chunkcount} chunks received, approx ${moment.duration((Math.ceil((eval(times.join('+')) / times.length) * (metadata.chunkcount - received))), 'seconds').humanize()}`)
+                        setSubStatus(`${received} out of ${metadata[4]} chunks received, approx ${moment.duration((Math.ceil((eval(times.join('+')) / times.length) * (metadata[4] - received))), 'seconds').humanize()}`)
                         start = Date.now();
                         socket.emit("transfer", pass, "getNextChunk");
                     })
@@ -134,7 +134,7 @@ function receive(pass) {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = metadata.name;
+                        a.download = metadata[3];
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
